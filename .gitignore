@@ -31,3 +31,14 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Debug / Temp files ###
+test_fetch.js
+node_rates.json
+rates-response.json
+rates-response-cmd.json
+
+### Environment variables ###
+frontend/.env
+frontend/.env.local
+frontend/.env.*.local

@@ -13,22 +13,30 @@ const SearchForm = ({ onSearch }) => {
     const [adults, setAdults] = useState(2);
 
     useEffect(() => {
+        let active = true;
         const fetchPlaces = async () => {
             if (cityQuery.length > 2) {
                 try {
                     const data = await getPlaces(cityQuery);
-                    setSuggestions(data?.data || []);
-                    setShowSuggestions(true);
+                    if (active) {
+                        setSuggestions(data?.data || []);
+                        setShowSuggestions(true);
+                    }
                 } catch (e) {
-                    console.error("Places API error", e);
+                    if (active) console.error("Places API error", e);
                 }
             } else {
-                setSuggestions([]);
-                setShowSuggestions(false);
+                if (active) {
+                    setSuggestions([]);
+                    setShowSuggestions(false);
+                }
             }
         };
         const timeoutId = setTimeout(() => fetchPlaces(), 500);
-        return () => clearTimeout(timeoutId);
+        return () => {
+            active = false;
+            clearTimeout(timeoutId);
+        };
     }, [cityQuery]);
 
     const handleSelectCity = (city) => {

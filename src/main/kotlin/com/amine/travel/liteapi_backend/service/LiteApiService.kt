@@ -2,55 +2,44 @@ package com.amine.travel.liteapi_backend.service
 
 import org.springframework.stereotype.Service
 import org.springframework.web.client.RestClient
+import org.springframework.web.client.HttpClientErrorException
 
 @Service
 class LiteApiService(private val liteApiRestClient: RestClient) {
 
-    fun getPlaces(textQuery: String): String {
-        return liteApiRestClient.get()
-            .uri { it.path("/data/places").queryParam("textQuery", textQuery).build() }
-            .retrieve()
-            .body(String::class.java) ?: "{}"
+    private fun executeGet(path: String, paramName: String, paramValue: String): String {
+        return try {
+            liteApiRestClient.get()
+                .uri { it.path(path).queryParam(paramName, paramValue).build() }
+                .retrieve()
+                .body(String::class.java) ?: "{}"
+        } catch (e: HttpClientErrorException) {
+            e.responseBodyAsString
+        } catch (e: Exception) {
+            "{\"error\": \"${e.message ?: "Unknown error"}\"}"
+        }
     }
 
-    fun getHotels(cityId: String): String {
-        return liteApiRestClient.get()
-            .uri { it.path("/data/hotels").queryParam("cityIds", cityId).build() }
-            .retrieve()
-            .body(String::class.java) ?: "{}"
+    private fun executePost(path: String, payload: String): String {
+        return try {
+            liteApiRestClient.post()
+                .uri(path)
+                .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                .body(payload)
+                .retrieve()
+                .body(String::class.java) ?: "{}"
+        } catch (e: HttpClientErrorException) {
+            e.responseBodyAsString
+        } catch (e: Exception) {
+            "{\"error\": \"${e.message ?: "Unknown error"}\"}"
+        }
     }
 
-    fun getHotelDetails(hotelId: String): String {
-        return liteApiRestClient.get()
-            .uri { it.path("/data/hotel").queryParam("hotelId", hotelId).build() }
-            .retrieve()
-            .body(String::class.java) ?: "{}"
-    }
+    fun getPlaces(textQuery: String) = executeGet("/data/places", "textQuery", textQuery)
+    fun getHotels(cityId: String) = executeGet("/data/hotels", "cityIds", cityId)
+    fun getHotelDetails(hotelId: String) = executeGet("/data/hotel", "hotelId", hotelId)
 
-    fun searchRates(payload: String): String {
-        return liteApiRestClient.post()
-            .uri("/hotels/rates")
-            .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
-            .body(payload)
-            .retrieve()
-            .body(String::class.java) ?: "{}"
-    }
-
-    fun prebook(payload: String): String {
-        return liteApiRestClient.post()
-            .uri("/rates/prebook")
-            .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
-            .body(payload)
-            .retrieve()
-            .body(String::class.java) ?: "{}"
-    }
-
-    fun book(payload: String): String {
-        return liteApiRestClient.post()
-            .uri("/rates/book")
-            .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
-            .body(payload)
-            .retrieve()
-            .body(String::class.java) ?: "{}"
-    }
+    fun searchRates(payload: String) = executePost("/hotels/rates", payload)
+    fun prebook(payload: String) = executePost("/rates/prebook", payload)
+    fun book(payload: String) = executePost("/rates/book", payload)
 }
